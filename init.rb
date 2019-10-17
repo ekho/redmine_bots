@@ -51,3 +51,20 @@ Redmine::Plugin.register :redmine_bots do
 
   permission :view_telegram_account_info, {}
 end
+
+if defined?(Rails::Server)
+  Rails.application.config.after_initialize do
+    require 'rake'
+
+    tasks = %w(redmine_bots:slack redmine_bots:telegram)
+
+    Rake::Task.clear # necessary to avoid tasks being loaded several times in dev mode
+    Redmine::Application.load_tasks # providing your application name is 'sample'
+
+    tasks.each do |task|
+      Rails.logger.info "[redmine_bots] Starting #{task}"
+      Rake::Task[task].reenable # in case you're going to invoke the same task second time.
+      Rake::Task[task].invoke
+    end
+  end
+end
